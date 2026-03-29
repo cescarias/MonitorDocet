@@ -1,0 +1,867 @@
+﻿<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANTIGRAVITY MONITOR OS | Command Center</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>:root {
+    --bg-gradient: linear-gradient(135deg, #2e1065, #1e1b4b, #0f172a); /* Soft deep pastel blue/purple */
+    --panel-bg: rgba(255, 255, 255, 0.12); /* Lighter, friendlier glass */
+    --accent-blue: #a78bfa; /* Soft pastel purple-blue */
+    --accent-red: #fb7185; /* Soft pastel rose */
+    --text-primary: #fdf8f6;
+    --text-meta: #cbd5e1;
+    --border-glass: 1px solid rgba(255, 255, 255, 0.2);
+    --font-main: 'Inter', system-ui, sans-serif;
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    overflow: hidden;
+    height: 100vh;
+}
+
+#desktop {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Alert Banner (Top) */
+#alert-banner {
+    height: 28px;
+    background: rgba(37, 99, 235, 0.9);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8em;
+    letter-spacing: 1px;
+    z-index: 10000;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Taskbar (Bottom) */
+#taskbar {
+    height: 52px;
+    background: rgba(15, 17, 21, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: var(--border-glass);
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 9999;
+}
+
+#start-btn {
+    color: #fff;
+    font-size: 1.4em;
+    cursor: pointer;
+    margin-right: 25px;
+    transition: transform 0.2s;
+}
+
+#start-btn:hover {
+    transform: scale(1.1);
+    color: var(--accent-blue);
+}
+
+#system-tray {
+    margin-left: auto;
+    font-weight: 500;
+    font-size: 0.85em;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tray-icon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+@keyframes windowFadeIn {
+    from { opacity: 0; transform: translateY(40px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.os-window {
+    position: absolute;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--border-glass);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: windowFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0; /* Starts hidden for animation */
+}
+
+.os-window:hover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35); /* Glow effect on hover */
+}
+
+.window-header {
+    height: 42px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: var(--border-glass);
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    cursor: grab;
+}
+
+.window-header:active {
+    cursor: grabbing;
+}
+
+.window-title {
+    flex: 1;
+    font-weight: 800; /* Bolder */
+    font-size: 0.85em;
+    color: var(--accent-blue); /* Changed title color */
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.window-controls { display: flex; align-items: stretch; }
+.control-btn {
+    width: 36px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+    border-radius: 4px; /* Slight windows-like rounding */
+    margin-left: 2px;
+}
+
+.control-btn i {
+    opacity: 0.7; /* Always visible */
+    font-size: 11px;
+    color: #e2e8f0;
+}
+
+.window-controls:hover .control-btn i {
+    opacity: 1;
+}
+
+.control-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.btn-close:hover { background: #ef4444 !important; }
+.btn-close:hover i { color: #fff; }
+
+.window-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* App Styles */
+.edu-news-item {
+    padding: 6px 8px; /* Compact padding */
+    margin-bottom: 4px; /* Compact margin */
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edu-news-item:hover { 
+    background: rgba(255, 255, 255, 0.07); 
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(3px);
+}
+
+.item-title {
+    font-size: 0.75em; 
+    font-weight: 600; /* Bolder to balance darkness */
+    color: #94a3b8; /* Darker slate gray for titles */
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.item-meta {
+    font-size: 0.65em; 
+    color: #64748b; /* Much darker meta */
+    font-weight: 600;
+}
+
+/* Social Cards */
+.social-card {
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: var(--border-glass);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex; /* Make it horizontal to save space */
+    align-items: center;
+}
+
+.social-card:hover { transform: translateX(3px); border-color: rgba(255,255,255,0.2); }
+
+.social-thumb {
+    width: 60px; /* Reduced thumb in horizontal mode */
+    height: 60px;
+    object-fit: cover;
+}
+
+.social-body {
+    padding: 8px;
+    font-size: 0.75em; 
+    color: #94a3b8; /* Darker slate gray for social text */
+    line-height: 1.2;
+    flex: 1;
+}
+
+/* Media/TV */
+.media-box {
+    position: relative;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: var(--border-glass);
+}
+
+.media-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.media-box:hover .media-img {
+    transform: scale(1.05);
+}
+
+/* Post-it Notes */
+.sticky-note {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, #fef08a, #facc15);
+    color: #1c1917;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6);
+    padding: 15px;
+    border-radius: 2px 2px 14px 2px;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    cursor: grab;
+}
+
+.sticky-note:active { cursor: grabbing; }
+
+.sticky-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px dashed rgba(0,0,0,0.2); margin-bottom: 8px; padding-bottom: 4px;
+}
+
+.sticky-textarea {
+    width: 100%; height: calc(100% - 30px);
+    border: none; background: transparent; outline: none; resize: none;
+    font-family: inherit; color: inherit; font-size: 0.9em;
+}
+
+/* SemÃ for Progress Bars */
+.progress-bg {
+    width: 100%; height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px; margin-top: 6px; overflow: hidden;
+}
+.progress-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 1s ease-out;
+}
+
+.media-overlay {
+    position: absolute;
+    bottom: 0;
+    padding: 20px 15px 15px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    width: 100%;
+}
+
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--accent-red);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink { 
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; } 
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+</style>
+    <script>window.MONITOR_DATA = {
+    "gencat":  [
+                   {
+                       "type":  "Notícia",
+                       "title":  "Nou Calendari Escolar 2026-27",
+                       "link":  "https://educacio.gencat.cat/ca/departament/publicacions/colleccions/calendari-escolar/"
+                   },
+                   {
+                       "type":  "Tràmit",
+                       "title":  "Preinscripció 2026: Dates Oficials ESO",
+                       "link":  "https://preinscripcio.gencat.cat/ca/estudis/eso/informat/calendari/"
+                   }
+               ],
+    "unions":  {
+                   "ustec":  [
+                                 {
+                                     "title":  "Resum reunió condicions laborals",
+                                     "link":  "https://www.sindicat.net/2026/03/27/resum-de-la-reunio-amb-el-conseller-dalmau-el-dijous-26-de-marc/"
+                                 }
+                             ],
+                   "ccoo_ugt":  [
+                                    {
+                                        "title":  "Dictamen crític calendari escolar",
+                                        "link":  "https://www.ccoo.cat/educacio/noticies/consell-deducacio-de-catalunya-un-dictamen-sobre-lordre-de-calendari-que-no-compartim/"
+                                    }
+                                ]
+               },
+    "pau_info":  [
+                     {
+                         "title":  "Dates PAU 2026: 9, 10 i 11 de juny",
+                         "link":  "https://universitats.gencat.cat/ca/pau/dia-prova/"
+                     },
+                     {
+                         "title":  "PAU 2026: Horari Detallat (PDF Oficial)",
+                         "link":  "https://www.gencat.cat/recercaiuniversitats/accesuniversitat/centres/PAU_2026_horari.pdf"
+                     }
+                 ],
+    "scholarships":  [
+                         {
+                             "title":  "Portal Ajuts i Beques Gencat",
+                             "link":  "https://educacio.gencat.cat/ca/serveis-tramits/beques/"
+                         },
+                         {
+                             "title":  "Ajuts Menjador Municipal",
+                             "link":  "https://www.edubcn.cat/ca/alumnat_i_familia/beques_ajuts_i_subvencions/ajuts_de_menjador"
+                         }
+                     ],
+    "inclusion_info":  [
+                           {
+                               "title":  "Reforç Inclusiva - Millora de ràtios",
+                               "link":  "https://www.ccoo.cat/educacio/"
+                           },
+                           {
+                               "title":  "Atenció a la Diversitat (NEAE)",
+                               "link":  "https://xtec.gencat.cat/ca/centres/procediments/atencio-diversitat/"
+                           }
+                       ],
+    "social":  [
+                   {
+                       "platform":  "Twitter",
+                       "user":  "@educaciocat",
+                       "comment":  "Calendari confirmat: El curs 26-27 començarà el 8 de setembre.",
+                       "thumb":  "https://educacio.gencat.cat/web/resources/fwk/comuns/img/avatar.jpg",
+                       "link":  "https://twitter.com/educaciocat"
+                   },
+                   {
+                       "platform":  "USTEC",
+                       "user":  "USTEC-STEs",
+                       "comment":  "Reunió amb el conseller. Vagues...",
+                       "thumb":  "https://www.sindicat.net/wp-content/uploads/2023/06/comunicat-megafon-3d.png",
+                       "link":  "https://www.sindicat.net/2026/03/27/resum-de-la-reunio-amb-el-conseller-dalmau-el-dijous-26-de-marc/"
+                   },
+                   {
+                       "platform":  "CCOO",
+                       "user":  "CCOO Educació",
+                       "comment":  "Critica ordre de nou calendari escolar.",
+                       "thumb":  "https://www.ccoo.cat/educacio/wp-content/uploads/sites/139/2026/03/postals-2025-20261.png",
+                       "link":  "https://www.ccoo.cat/educacio/noticies/consell-deducacio-de-catalunya-un-dictamen-sobre-lordre-de-calendari-que-no-compartim/"
+                   }
+               ],
+    "borsa_docent":  [
+                         {
+                             "title":  "Obertura Borsa Treball 2026-2027",
+                             "desc":  "Consulta requisits formatius per a l\u0027ingrés excepcional.",
+                             "link":  "https://educacio.gencat.cat/ca/arees-actuacio/professors-personal-centres/"
+                         },
+                         {
+                             "title":  "Adjudicacions d\u0027estiu provisionals",
+                             "desc":  "Resolució d\u0027assignacions al juliol 2026.",
+                             "link":  "https://educacio.gencat.cat/ca/arees-actuacio/professors-personal-centres/"
+                         },
+                         {
+                             "title":  "Concurs Oposició 2026: Resultats",
+                             "desc":  "Consulta els tribunals i els aspirants seleccionats.",
+                             "link":  "https://educacio.gencat.cat/ca/arees-actuacio/professors-personal-centres/"
+                         }
+                     ],
+    "teacher_links":  [
+                          {
+                              "title":  "Portal ATRI Gencat",
+                              "desc":  "Gestió de nòmines, baixes i currículum informatiu.",
+                              "link":  "https://atri.gencat.cat/"
+                          },
+                          {
+                              "title":  "Gestió Esfera Educació",
+                              "desc":  "Avaluacions, actes, SAGA i currículum.",
+                              "link":  "https://esfera.educacio.gencat.cat/"
+                          },
+                          {
+                              "title":  "Odissea XTEC",
+                              "desc":  "Plataforma de formació per als claustres i docents.",
+                              "link":  "https://odissea.xtec.cat/"
+                          },
+                          {
+                              "title":  "Correu i Apps XTEC",
+                              "desc":  "Accés al GSuite i a la bústia electrònica corporativa.",
+                              "link":  "https://xtec.gencat.cat/"
+                          }
+                      ],
+    "dogc_feed":  [
+                      {
+                          "date":  "VUI 09:00",
+                          "title":  "RESOLUCIÓ EDU/1042/2026 - Convocatòria de plantilles docents.",
+                          "type":  "PERSONAL",
+                          "link":  "https://dogc.gencat.cat/"
+                      },
+                      {
+                          "date":  "DIV 14:30",
+                          "title":  "ORDRE EDU/921/2026 - Aprovació de les proves PAU i currículum de Batxillerat.",
+                          "type":  "NORMATIVA",
+                          "link":  "https://dogc.gencat.cat/"
+                      },
+                      {
+                          "date":  "DIM 10:15",
+                          "title":  "RESOLUCIÓ EDU/890/2026 - Subvencions per a l\u0027escola rural.",
+                          "type":  "PRESSUPOST",
+                          "link":  "https://dogc.gencat.cat/"
+                      }
+                  ],
+    "personal_tasks":  [
+                           {
+                               "task":  "Avaluar expedients de 2n Batxillerat",
+                               "status":  "pending",
+                               "urgent":  true
+                           },
+                           {
+                               "task":  "Revisar actes de la reunió de departament",
+                               "status":  "pending",
+                               "urgent":  false
+                           },
+                           {
+                               "task":  "Tancar notes T3 al sistema Esfera",
+                               "status":  "done",
+                               "urgent":  false
+                           },
+                           {
+                               "task":  "Preparar documentació de preinscripció",
+                               "status":  "done",
+                               "urgent":  false
+                           }
+                       ],
+    "ins_santaeulalia":  [
+                             {
+                                 "platform":  "Instagram",
+                                 "user":  "@ins_santaeulalia",
+                                 "comment":  "Gran dia de portes obertes 26/27! Veniu a conèixer el nostre projecte.",
+                                 "link":  "https://www.instagram.com/ins_santaeulalia/"
+                             },
+                             {
+                                 "platform":  "X",
+                                 "user":  "@santaeulaliains",
+                                 "comment":  "Els nostres alumnes de 4t d\u0027ESO guanyen el premi d\u0027innovació científica STEAM a Terrassa!",
+                                 "link":  "https://twitter.com/santaeulaliains"
+                             },
+                             {
+                                 "platform":  "Facebook",
+                                 "user":  "INS Santa Eulàlia",
+                                 "comment":  "Avui claustre extraordinari amb l\u0027AFA per debatre les millores de pati aprovades.",
+                                 "link":  "https://www.facebook.com/instsantaeulalia"
+                             }
+                         ],
+    "videos":  {
+                   "tv":  [
+                              {
+                                  "title":  "3Cat: Notícies d\u0027Educació Catalunya",
+                                  "link":  "https://www.3cat.cat/3catinfo/educacio/",
+                                  "thumb":  "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600\u0026q=80"
+                              }
+                          ],
+                   "youtube":  [
+                                   {
+                                       "title":  "Canal Oficial YouTube Educació",
+                                       "link":  "https://www.youtube.com/results?search_query=educaci%C3%B3",
+                                       "thumb":  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600\u0026q=80"
+                                   }
+                               ]
+               }
+};
+</script>
+<script>// LIVE UPDATE SYSTEM
+async function updateMonitorDataLive() {
+    const rss = async (url) => {
+        try {
+            let res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url));
+            let d = await res.json();
+            return d.items || [];
+        } catch(e) { return []; }
+    };
+    
+    // Fetch live Sindicats (USTEC-STEs)
+    let synd = await rss('https://www.sindicat.net/feed/');
+    if(synd.length > 0) {
+        window.MONITOR_DATA.unions.ustec = synd.slice(0,3).map(i => ({ title: i.title, desc: (i.description || '').replace(/(<([^>]+)>)/gi, '').substring(0, 60) + '...', link: i.link }));
+        window.MONITOR_DATA.unions.ccoo_ugt = window.MONITOR_DATA.unions.ustec; // fallback copy
+    }
+
+    // Fetch live TV3 News
+    let tv3 = await rss('https://www.ccma.cat/rss/324/portada/');
+    if(tv3.length > 0) {
+        window.MONITOR_DATA.videos.tv = [{ title: tv3[0].title, link: tv3[0].link, thumb: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=100' }];
+    }
+
+    // Fetch Govern Generalitat News (DOGC / Premsa proxy)
+    let gov = await rss('https://govern.cat/salapremsa/rss/canals/portada.xml');
+    if(gov.length > 0) {
+        window.MONITOR_DATA.dogc_feed = gov.slice(0,4).map(i => ({ date: 'AVUI', title: i.title, type: 'GENCAT', link: i.link }));
+    }
+
+    // Fetch INS Santa Eulàlia News (most Institutes use WordPress /feed)
+    let ins = await rss('https://www.ins-santaeulalia.cat/feed/');
+    if(ins.length > 0) {
+        window.MONITOR_DATA.ins_santaeulalia = ins.slice(0,4).map(i => ({ platform: 'Web Institut', user: 'Direcció', comment: i.title, thumb: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=100', link: i.link }));
+    }
+}</script></head>
+<body>
+
+
+    <div id="desktop">
+        <!-- Floating Window Area -->
+        <div id="window-area"></div>
+
+        <!-- Taskbar -->
+        <div id="taskbar">
+            <div id="start-btn" class="nav-btn" style="cursor: default">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+            
+            <div id="active-apps">
+                <!-- App icons will spawn here -->
+            </div>
+
+            <div id="system-tray" style="align-items:center;">
+                <span class="tray-icon" style="cursor:pointer; margin-right:15px; color:#fef08a; font-weight:bold;" onclick="window.desktop.createStickyNote()">
+                    <i class="fa-solid fa-note-sticky"></i> POST-IT
+                </span>
+                <span id="weather-tray" style="margin-right:15px; color:var(--text-meta);">
+                    <i class="fa-solid fa-cloud"></i> --Â°C Terrassa
+                </span>
+                <span id="clock" style="margin-right:15px; font-weight:700;">00:00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>/**
+ * Antigravity Monitor OS - World Monitor Style Edition
+ */
+
+class WindowManager {
+    constructor() {
+        this.windows = [];
+        this.zIndex = 1000;
+        this.windowArea = document.getElementById('window-area');
+        this.initWeather();
+    }
+
+    async initWeather() {
+        try {
+            const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.5667&longitude=2.0167&current_weather=true');
+            const data = await r.json();
+            const w = data.current_weather;
+            document.getElementById('weather-tray').innerHTML = `<i class="fa-solid fa-cloud-sun"></i> ${w.temperature}Â°C Terrassa`;
+        } catch(e) { console.error('Weathe fail', e); }
+    }
+
+    createWindow(id, title, tag, content, pos = null) {
+        const win = document.createElement('div');
+        win.className = 'os-window'; win.id = `win-${id}`;
+        
+        if (pos) {
+            win.style.width = pos.w || '24.2%';
+            win.style.height = pos.h || '340px'; 
+            win.style.left = pos.x || '0.5%';
+            win.style.top = pos.y || '45px'; // Below the alert banner
+            win.dataset.origX = win.style.left;
+            win.dataset.origY = win.style.top;
+            win.dataset.origW = win.style.width;
+            win.dataset.origH = win.style.height;
+        }
+        
+        win.style.zIndex = ++this.zIndex;
+        const titleStyle = id === 'ins_santaeulalia' ? 'style="color: #ef4444;"' : '';
+        win.innerHTML = `
+            <div class="window-header" style="height: 38px; padding-right:0;">
+                <div class="window-title" ${titleStyle}>${tag} | ${title}</div>
+                <div class="window-controls">
+                    <div class="control-btn btn-min" onclick="window.desktop.minimizeWindow('${win.id}')"><i class="fa-solid fa-minus"></i></div>
+                    <div class="control-btn btn-max" onclick="window.desktop.maximizeWindow('${win.id}')"><i class="fa-regular fa-square"></i></div>
+                    <div class="control-btn btn-close" onclick="window.desktop.closeWindow('${win.id}')"><i class="fa-solid fa-xmark"></i></div>
+                </div>
+            </div>
+            <div class="window-body">${content}</div>
+        `;
+        this.windowArea.appendChild(win);
+        this.makeDraggable(win);
+        this.windows.push(win);
+        win.addEventListener('mousedown', () => this.bringToFront(win));
+        return win;
+    }
+
+    bringToFront(win) { win.style.zIndex = ++this.zIndex; }
+    closeWindow(winId) { const win = document.getElementById(winId); if (win) { win.remove(); this.windows = this.windows.filter(w => w.id !== winId); } }
+    
+    maximizeWindow(winId) {
+        const win = document.getElementById(winId);
+        if (!win) return;
+        if (win.classList.contains('maximized')) {
+            win.classList.remove('maximized');
+            win.style.width = win.dataset.origW; win.style.height = win.dataset.origH;
+            win.style.left = win.dataset.origX; win.style.top = win.dataset.origY;
+            win.style.borderRadius = '12px';
+        } else {
+            win.classList.add('maximized');
+            win.style.width = '60vw'; win.style.height = 'calc(100vh - 52px)';
+            win.style.left = '20vw'; win.style.top = '0';
+            win.style.borderRadius = '0 0 12px 12px';
+            this.bringToFront(win);
+        }
+    }
+
+    makeDraggable(win) {
+        const header = win.querySelector('.window-header');
+        header.onmousedown = (e) => {
+            if (win.classList.contains('maximized')) return;
+            if (e.target.closest('.control-btn')) return;
+            let pos3 = e.clientX, pos4 = e.clientY;
+            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+            document.onmousemove = (e) => {
+                let pos1 = pos3 - e.clientX, pos2 = pos4 - e.clientY;
+                pos3 = e.clientX; pos4 = e.clientY;
+                win.style.top = (win.offsetTop - pos2) + "px";
+                win.style.left = (win.offsetLeft - pos1) + "px";
+                win.dataset.origX = win.style.left; win.dataset.origY = win.style.top;
+            };
+        };
+    }
+}
+
+class Desktop {
+    constructor() {
+        this.wm = new WindowManager();
+        this.initClock();
+        // Removed start menu init
+        setTimeout(() => this.openApp('edu_monitor'), 800);
+    }
+
+    initClock() {
+        const clockEl = document.getElementById('clock');
+        setInterval(() => clockEl.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), 1000);
+    }
+
+    async openApp(appId) {
+        if(appId === 'edu_monitor') {
+            // Clear existing windows
+            document.getElementById('window-area').innerHTML = '';
+            this.wm.windows = [];
+            await this.openEducationWindows();
+        }
+    }
+
+    async openEducationWindows() {
+        try {
+            // Fetch directly from static JS variable to prevent CORS/file protocol locks when opening raw HTML!
+            await updateMonitorDataLive(); const data = window.MONITOR_DATA;
+
+            // V2 ASYMMETRIC MASONRY LAYOUT
+            const renderItem = (item) => `
+                <div class="edu-news-item" onclick="window.open('${item.link}', '_blank')">
+                    <div class="item-title">${item.title}</div>
+                    <div class="item-meta">ORIGEN: ${new URL(item.link).hostname}</div>
+                </div>
+            `;
+            
+            const renderTask = (task) => `
+                <div class="edu-news-item" style="border-left: 4px solid ${task.urgent ? 'var(--accent-red)' : (task.status === 'done' ? '#22c55e' : 'var(--accent-blue)')}">
+                    <div class="item-title" style="${task.status === 'done' ? 'text-decoration:line-through; color:#aaa' : ''}">${task.task}</div>
+                    <div class="item-meta">${task.urgent ? 'URGENT' : (task.status === 'done' ? 'COMPLETAT' : 'PENDENT')}</div>
+                </div>
+            `;
+
+            const renderDogc = (item) => `
+                <div class="edu-news-item" onclick="window.open('${item.link}', '_blank')">
+                    <div class="item-meta" style="color:#fbbf24; margin-bottom:4px">${item.date} | ${item.type}</div>
+                    <div class="item-title" style="font-family:monospace; font-size:0.8em">${item.title}</div>
+                </div>
+            `;
+
+            // RESPONSIVE 10-WINDOW ASYMMETRIC GRID (3 - 4 - 3 Layout)
+            const gap = 1; // 1% gap
+            const winH = 'calc(33.3vh - 20px)'; 
+            const calcW = (n) => `${(100 - (n + 1) * gap) / n}%`;
+            const calcX = (n, idx) => `${gap + idx * (100 / n)}%`;
+
+            const row1Y = '10px';               // 3 items
+            const row2Y = 'calc(33.3vh + 5px)'; // 4 items
+            const row3Y = 'calc(66.6vh)';       // 3 items
+
+            const renderSocial = (s) => `
+                <div class="social-card" onclick="window.open('${s.link}', '_blank')">
+                    <img src="${s.thumb || 'https://images.unsplash.com/photo-1546422904-90eab23c3d7e?w=100&q=80'}" class="social-thumb" loading="lazy">
+                    <div class="social-body"><strong style="color:var(--accent-blue)">${s.platform}:</strong> @${s.user}<br><span style="color:#aaa">${s.comment}</span></div>
+                </div>
+            `;
+
+            // ROW 1: 3 WINDOWS (High Interest)
+            this.wm.createWindow('teacher_links', 'EnllaÃ§os Docents', 'INTERÃˆS', `
+                <div class="edu-app">${data.teacher_links.map(renderItem).join('')}</div>
+            `, { x: calcX(3, 0), y: row1Y, w: calcW(3), h: winH });
+
+            this.wm.createWindow('personal_tasks', 'Agent Global', 'TASQUES', `
+                <div class="edu-app">
+                    <div style="padding:4px; font-weight:bold; color:var(--accent-blue); text-transform:uppercase; font-size:0.7em"><i class="fa-solid fa-list-check"></i> GestiÃ³ Personal</div>
+                    ${data.personal_tasks.map(renderTask).join('')}
+                </div>
+            `, { x: calcX(3, 1), y: row1Y, w: calcW(3), h: winH });
+
+            this.wm.createWindow('ins_santaeulalia', 'Novetats Institut', 'SANTA EULÃ€LIA', `
+                <div class="edu-app" style="overflow-x:hidden">${data.ins_santaeulalia.map(renderSocial).join('')}</div>
+            `, { x: calcX(3, 2), y: row1Y, w: calcW(3), h: winH });
+
+            // ROW 2: 4 WINDOWS (Institutional / Info)
+            this.wm.createWindow('edu_gencat_pau', 'TrÃ mits i PAU', 'GENCAT', `
+                <div class="edu-app">${data.gencat.concat(data.pau_info).map(renderItem).join('')}</div>
+            `, { x: calcX(4, 0), y: row2Y, w: calcW(4), h: winH });
+
+            this.wm.createWindow('edu_borsa', 'Borsa Docent', 'OPOSICIONS', `
+                <div class="edu-app">${data.borsa_docent.map(renderItem).join('')}</div>
+            `, { x: calcX(4, 1), y: row2Y, w: calcW(4), h: winH });
+
+            this.wm.createWindow('dogc_feed', 'Diari Oficial', 'D.O.G.C.', `
+                <div class="edu-app">${data.dogc_feed.map(renderDogc).join('')}</div>
+            `, { x: calcX(4, 2), y: row2Y, w: calcW(4), h: winH });
+
+            this.wm.createWindow('edu_unions', 'NotÃ­cies Sindicals', 'SINDICATS', `
+                <div class="edu-app">${data.unions.ustec.concat(data.unions.ccoo_ugt).map(renderItem).join('')}</div>
+            `, { x: calcX(4, 3), y: row2Y, w: calcW(4), h: winH });
+
+            // ROW 3: 3 WINDOWS (Media / Social)
+            this.wm.createWindow('tv_live', 'TelevisiÃ³', 'EN DIRECTE', `
+                <div class="media-box" onclick="window.open('${data.videos.tv[0].link}', '_blank')" style="cursor:pointer">
+                    <img src="${data.videos.tv[0].thumb}" class="media-img" loading="eager">
+                    <div class="media-overlay">
+                        <div style="font-size:0.7em; font-family: monospace; color:var(--accent-red)"><span class="live-indicator"></span> EN VIU | NOTÃCIES | TV3</div>
+                        <div style="font-weight:800; font-size:1.1em; color:#fff">${data.videos.tv[0].title}</div>
+                    </div>
+                </div>
+            `, { x: calcX(3, 0), y: row3Y, w: calcW(3), h: winH });
+
+            this.wm.createWindow('yt_stream', 'Plataforma YouTube', 'VÃDEO', `
+                <div class="media-box" onclick="window.open('${data.videos.youtube[0].link}', '_blank')" style="cursor:pointer">
+                    <img src="${data.videos.youtube[0].thumb}" class="media-img" loading="eager">
+                    <div class="media-overlay">
+                        <div style="font-size:0.7em; font-family: monospace; color:var(--accent-red)"><span class="live-indicator"></span> YOUTUBE | GENCAT | GENERAL</div>
+                        <div style="font-weight:800; font-size:1.1em; color:#fff">${data.videos.youtube[0].title}</div>
+                    </div>
+                </div>
+            `, { x: calcX(3, 1), y: row3Y, w: calcW(3), h: winH });
+
+            this.wm.createWindow('social_feed', 'Comunitat Xarxes', 'SOCIAL', `
+                <div class="edu-app" style="overflow-x:hidden">${data.social.map(renderSocial).join('')}</div>
+            `, { x: calcX(3, 2), y: row3Y, w: calcW(3), h: winH });
+
+        } catch(e) { console.error(e); }
+    }
+
+    closeWindow(id) { this.wm.closeWindow(id); }
+    maximizeWindow(id) { this.wm.maximizeWindow(id); }
+
+    minimizeWindow(id) {
+        const win = document.getElementById(id);
+        if (!win) return;
+        const body = win.querySelector('.window-body');
+        if (win.classList.contains('minimized')) {
+            win.classList.remove('minimized');
+            win.style.height = win.dataset.origH;
+            body.style.display = 'block';
+        } else {
+            win.classList.add('minimized');
+            win.dataset.origH = win.style.height; // Save original height
+            win.style.height = '38px'; // Header height
+            body.style.display = 'none';
+        }
+    }
+
+    createStickyNote() {
+        const note = document.createElement('div');
+        note.className = 'sticky-note';
+        note.style.left = (Math.random() * 40 + 30) + '%';
+        note.style.top = (Math.random() * 30 + 30) + '%';
+        note.style.zIndex = ++this.wm.zIndex;
+        note.innerHTML = `
+            <div class="sticky-header">
+                <span style="font-size:0.8em; font-weight:bold;">Nota rÃ pida</span>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="this.parentElement.parentElement.remove()"></i>
+            </div>
+            <textarea class="sticky-textarea" placeholder="Escriu alguna nota..." spellcheck="false"></textarea>
+        `;
+        document.getElementById('desktop').appendChild(note);
+        this.wm.makeDraggable(note);
+        note.addEventListener('mousedown', () => note.style.zIndex = ++this.wm.zIndex);
+    }
+}
+
+window.desktop = new Desktop();
+</script>
+</body>
+</html>
+
+
